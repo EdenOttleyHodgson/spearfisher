@@ -5,15 +5,25 @@ use std::{
     fs::{self, read_dir},
     io::{self, Error},
     path::PathBuf,
+    sync::Mutex,
 };
 
 use filedata::FileData;
 use homedir::my_home;
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
+use tauri::{Manager, State};
 
 mod filedata;
 
+struct AppState {
+    file_manager_data: Mutex<FileManagerData>,
+}
+impl AppState {
+    fn new(file_manager_data: FileManagerData) -> AppState {
+        let file_manager_data = Mutex::new(file_manager_data);
+        AppState { file_manager_data }
+    }
+}
 #[derive(Serialize, Deserialize)]
 struct FileManagerData {
     current_location: FileData,
@@ -42,6 +52,15 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+#[tauri::command]
+fn get_file_manager_data(state: State<AppState>) -> String {
+    let file_manager_data = state
+        .file_manager_data
+        .lock()
+        .expect("Lock should not be poisoned!");
+    serde_json::to_string(&*file_manager_data).expect("File manager data should be serializable!")
+}
+
 fn main() {
     // let test = read_dir("/home/eden/Documents/").unwrap();
     // for entry in test {
@@ -53,10 +72,10 @@ fn main() {
 
     let init_dir_path = get_init_dir_path();
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![greet, get_file_manager_data])
         .setup(|app| {
-            let file_manager_data = FileManagerData::new(init_dir_path);
-            app.manage(file_manager_data);
+            let file_manager_data = FileManagerData::new(init_dir_path)?;
+            app.manage(AppState::new(file_manager_data));
             Ok(())
         })
         .run(tauri::generate_context!())

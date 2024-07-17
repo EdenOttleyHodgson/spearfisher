@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/tauri";
-
+  import { get_file_manager_data } from "../lib/commands";
   let name = "";
   let greetMsg = "";
 
@@ -8,6 +8,7 @@
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     greetMsg = await invoke("greet", { name });
   }
+  let data = get_file_manager_data();
 </script>
 
 <div class="container">
@@ -33,6 +34,14 @@
   </form>
 
   <p>{greetMsg}</p>
+
+  {#await data}
+    <!-- promise is pending -->
+  {:then data}
+    <p>{data.current_location.full_path}</p>
+
+    <!-- promise was fulfilled -->
+  {/await}
 </div>
 
 <style>

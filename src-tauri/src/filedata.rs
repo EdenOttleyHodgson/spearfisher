@@ -35,7 +35,7 @@ impl Serialize for SerdeWrapper<Metadata> {
         S: serde::Serializer,
     {
         let metadata = &self.0;
-        let mut state = serializer.serialize_struct("Metadata", 10)?;
+        let mut state = serializer.serialize_struct("metadata", 10)?;
         state.serialize_field("length", &metadata.len())?;
         state.serialize_field("readonly", &metadata.permissions().readonly())?;
         state.serialize_field("modified", &metadata.modified().ok())?;
