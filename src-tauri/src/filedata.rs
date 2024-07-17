@@ -1,7 +1,7 @@
 use std::ffi::OsString;
-use std::fs::{DirEntry, FileType, Metadata};
+use std::fs::{DirEntry, File, FileType, Metadata};
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::de::value;
 use serde::ser::*;
@@ -44,29 +44,66 @@ impl Serialize for SerdeWrapper<Metadata> {
         state.end()
     }
 }
+impl<'de> Deserialize<'de> for SerdeWrapper<Metadata> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        todo!()
+    }
+}
+fn to_os_string_conv_error(_: OsString) -> io::Error {
+    io::Error::new(
+        io::ErrorKind::Other,
+        "could not convert os string to string",
+    )
+}
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FileData {
     name: String,
     full_path: String,
     file_type: FileTypeEnum,
     metadata: SerdeWrapper<Metadata>,
 }
+impl FileData {
+    pub fn make_from_file(
+        name: PathBuf,
+        full_path: PathBuf,
+        file: File,
+    ) -> Result<FileData, io::Error> {
+        let name = name
+            .into_os_string()
+            .into_string()
+            .map_err(to_os_string_conv_error)?;
+        let full_path = full_path
+            .into_os_string()
+            .into_string()
+            .map_err(to_os_string_conv_error)?;
+        let metadata = file.metadata()?;
+        let file_type = FileTypeEnum::from(metadata.file_type());
+        let data = FileData {
+            name,
+            full_path,
+            file_type,
+            metadata: SerdeWrapper(metadata),
+        };
+        Ok(data)
+    }
+}
+
 impl TryFrom<DirEntry> for FileData {
     type Error = io::Error;
     fn try_from(value: DirEntry) -> Result<Self, Self::Error> {
-        fn conv_error(_: OsString) -> io::Error {
-            io::Error::new(
-                io::ErrorKind::Other,
-                "could not convert os string to string",
-            )
-        }
-        let name = value.file_name().into_string().map_err(conv_error)?;
+        let name = value
+            .file_name()
+            .into_string()
+            .map_err(to_os_string_conv_error)?;
         let full_path = value
             .path()
             .into_os_string()
             .into_string()
-            .map_err(conv_error)?;
+            .map_err(to_os_string_conv_error)?;
         let file_type = FileTypeEnum::from(value.file_type()?);
         let metadata = SerdeWrapper(value.metadata()?);
         let data = FileData {
@@ -78,9 +115,6 @@ impl TryFrom<DirEntry> for FileData {
         Ok(data)
     }
 }
-
-#[derive(Serialize, Deserialize)]
-struct FileManagerData {}
 
 #[cfg(test)]
 mod tests {
