@@ -8,7 +8,7 @@ use serde::ser::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-enum FileTypeEnum {
+pub enum FileTypeEnum {
     File,
     Directory,
     Symlink,
@@ -61,10 +61,10 @@ fn to_os_string_conv_error(_: OsString) -> io::Error {
 
 #[derive(Serialize, Deserialize)]
 pub struct FileData {
-    name: String,
-    full_path: String,
-    file_type: FileTypeEnum,
-    metadata: SerdeWrapper<Metadata>,
+    pub name: String,
+    pub full_path: String,
+    pub file_type: FileTypeEnum,
+    pub metadata: SerdeWrapper<Metadata>,
 }
 impl FileData {
     pub fn make_from_file(

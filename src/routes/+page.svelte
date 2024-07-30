@@ -3,7 +3,7 @@
   import { get_file_manager_data } from "../lib/commands";
   let name = "";
   let greetMsg = "";
-
+  let testurl = "filemanager/" + encodeURIComponent("/home/eden/Documents");
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     greetMsg = await invoke("greet", { name });
@@ -11,6 +11,7 @@
   let data = get_file_manager_data();
 </script>
 
+<a href={testurl}>test</a>
 <div class="container">
   <h1>Welcome to Tauri!</h1>
 
