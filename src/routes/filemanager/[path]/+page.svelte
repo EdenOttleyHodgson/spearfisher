@@ -1,12 +1,19 @@
 <script lang="ts">
+  import "$lib/styles.css";
   import { get_current_directory_data } from "$lib/commands";
   import AddressBar from "$lib/components/AddressBar.svelte";
   import ButtonBar from "$lib/components/ButtonBar.svelte";
   import DirectoryDisplay from "$lib/components/DirectoryDisplay.svelte";
   import DirectoryTreeArea from "$lib/components/DirectoryTreeArea.svelte";
+  import FileInfoDisplay from "$lib/components/FileInfoDisplay.svelte";
   export let data: { path: string };
 
   let current_directory_data = get_current_directory_data(data.path);
+  let selected_file: FileData | null = null;
+  function on_file_selected(e: CustomEvent<FileData>) {
+    selected_file = e.detail;
+    console.log(selected_file);
+  }
 </script>
 
 {#await current_directory_data}
@@ -29,8 +36,15 @@
         <DirectoryDisplay
           current_location={directory_data.current_location}
           current_files={directory_data.current_files}
+          on:file-selected={on_file_selected}
+          on:deselect-file={() => (selected_file = null)}
         ></DirectoryDisplay>
       </div>
+      {#if selected_file != null}
+        <div id="file-display-div">
+          <FileInfoDisplay file={selected_file}></FileInfoDisplay>
+        </div>
+      {/if}
     </div>
   </div>
 {/await}
@@ -40,18 +54,6 @@
     height: 98vh;
     width: 99vw;
     border: 3px solid green;
-  }
-  .horizontal-flex {
-    display: flex;
-    flex-direction: row;
-  }
-  .vertical-flex {
-    display: flex;
-    flex-direction: column;
-  }
-  .centered {
-    align-items: center;
-    justify-content: center;
   }
   #navbar {
     width: 100%;
@@ -83,5 +85,9 @@
   #directory-display-div {
     height: 100%;
     width: 70%;
+  }
+  #file-display-div {
+    width: 30%;
+    height: 100%;
   }
 </style>
